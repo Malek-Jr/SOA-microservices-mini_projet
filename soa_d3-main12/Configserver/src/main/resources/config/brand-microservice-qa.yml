@@ -1,0 +1,6 @@
+build :
+  version : "3.0"
+
+author:
+  name: "Malek Romdhane [QA]"
+  email: "malekromdhane@gmail.com [QA]"
