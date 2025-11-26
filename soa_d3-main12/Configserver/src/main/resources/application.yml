@@ -1,0 +1,28 @@
+spring:
+  rabbitmq:
+    host: "localhost"
+    port: 5672
+    username: "guest"
+    password: "guest"
+  application:
+    name: "configserver"
+  profiles:
+    active: git
+  #    active: native
+  cloud:
+    config:
+      server:
+        git:
+          uri: https://github.com/Malek-Jr/config-repo.git
+          default-label: main
+          clone-on-start: true
+#        native:
+#          search-locations: file///C:/Users/ASUS/IdeaProjects/malek-spring-cloud/config-repo
+#          search-locations: "classpath:/config"
+server:
+  port: 9999
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'

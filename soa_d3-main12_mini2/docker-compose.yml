@@ -1,0 +1,103 @@
+version: "3.8"
+
+services:
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - ms-network
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  eurekaserver:
+    build: ./eurekaserver
+    container_name: eurekaserverr
+    networks:
+      - ms-network
+    healthcheck:
+      test: "curl --fail --silent http://localhost:8761/actuator/health | grep UP || exit 1"
+      interval: 10s
+
+  configserver:
+    build: ./configserver
+    container_name: configserverr
+    networks:
+      - ms-network
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eurekaserver:8761/eureka/
+    healthcheck:
+      test: "curl --fail --silent http://localhost:9999/actuator/health | grep UP || exit 1"
+      interval: 10s
+    depends_on:
+      eurekaserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  gateway:
+    build: ./gatewayserver
+    container_name: gatewayy
+    ports:
+      - "8888:8888"
+    networks:
+      - ms-network
+    environment:
+      - DISCOVERY_SERVICE_URL=http://eurekaserver:8761/eureka
+      - CONFIG_SERVICE_URL=http://configserver:9999
+      - KEYCLOAK_URL=${KEYCLOAK_URL:-http://host.docker.internal:8090}
+    healthcheck:
+      test: "curl --fail --silent http://localhost:8888/actuator/health | grep UP || exit 1"
+      interval: 10s
+    depends_on:
+      eurekaserver:
+        condition: service_healthy
+      configserver:
+        condition: service_healthy
+
+  brand_ms:
+    build: ./brand-microservice
+    container_name: brand_mss
+    networks:
+      - ms-network
+    environment:
+      - DISCOVERY_SERVICE_URL=http://eurekaserver:8761/eureka
+      - CONFIG_SERVICE_URL=http://configserver:9999
+    healthcheck:
+      test: "curl --fail --silent http://localhost:8082/actuator/health | grep UP || exit 1"
+      interval: 10s
+    depends_on:
+      eurekaserver:
+        condition: service_healthy
+      configserver:
+        condition: service_healthy
+
+  moto_ms:
+    build: ./moto-microservice
+    container_name: moto_mss
+    networks:
+      - ms-network
+    environment:
+      - DISCOVERY_SERVICE_URL=http://eurekaserver:8761/eureka
+      - CONFIG_SERVICE_URL=http://configserver:9999
+    healthcheck:
+      test: "curl --fail --silent http://localhost:8081/actuator/health | grep UP || exit 1"
+      interval: 10s
+    depends_on:
+      eurekaserver:
+        condition: service_healthy
+      configserver:
+        condition: service_healthy
+      brand_ms:
+        condition: service_healthy
+
+
+networks:
+  ms-network:
+    driver: bridge

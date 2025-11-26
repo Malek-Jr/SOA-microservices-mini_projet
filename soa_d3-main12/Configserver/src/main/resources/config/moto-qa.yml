@@ -1,0 +1,6 @@
+build :
+  version : "3.0"
+
+author:
+  name: "Malek Romdhane [moto QA]"
+  email: "malekromdhane@gmail.com [moto QA]"
